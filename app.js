@@ -1,24 +1,22 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const request = require('request');
+const { pp } = require('./config');
+
+const { cid, secret, partnerId } = pp;
 
 let ppdata = {};
 const ppUrl = 'https://api.sandbox.paypal.com/v1';
-const tid = Date.now();
+const tid = Date.now(); // Tracking id can be completely random, should be uuid
 
-
-const cid =  '';
-const secret = '';
-/* shivin's credentials 
-*/
-
-
+// Logging
 const log = (d )=> {
   console.log('LOGGING', d);
   if(typeof d === 'string') d = JSON.parse(d);
   console.log( JSON.stringify(d, null, 2) );
 };
 
+// Helper function to send post request and error handling
 const post = (url, data, cb) => {
   request.post(`${ppUrl}${url}`, data, (err, res, body) => {
     if (err) 
@@ -28,11 +26,11 @@ const post = (url, data, cb) => {
   });
 };
 
+// When app starts, get an oauth token
 post('/oauth2/token', {
   form: {
     grant_type: 'client_credentials' 
   },
-  //auth: `${cid}:${secret}`
   auth: {
     user: cid,
     pass: secret
@@ -41,21 +39,26 @@ post('/oauth2/token', {
   ppdata = body;
 });
 
+// Express - server routing
 const app = express();
-
 app.use(express.static('public'));
 app.use(bodyParser.json());
 
 app.get('/', (req,res) => {
-  res.send('HELLO');
+  res.send('Hello. Please visit /isu.html');
 });
 
+// Privacy policy url and user agreements
 app.get('/merchant/ppurl', (req,res) => {
   res.send('SONG ZHENG HAS AMAZING privacy policy');
 });
+app.get('/merchant/uaurl', (req,res) => {
+  res.send('SONG ZHENG HAS AMAZING USER AGREEMENT');
+});
 
+
+// Client will be hitting this url to create a referral url for isu
 app.post('/merchant/referrals', (req,res) => {
-  console.log('TRACKING_ID', tid);
   post('/customer/partner-referrals', {
     headers: {
       Authorization: `Bearer ${ppdata.access_token}`
@@ -76,7 +79,7 @@ app.post('/merchant/referrals', (req,res) => {
       requested_capabilities: [{
         capability: 'API_INTEGRATION',
         api_integration_preference: {
-          "partner_id": "",
+          "partner_id": partnerId,
           "rest_api_integration": {
             "integration_method": "PAYPAL",
             "integration_type": "THIRD_PARTY"
@@ -99,40 +102,18 @@ app.post('/merchant/referrals', (req,res) => {
   });
 });
 
-app.get('/merchant/lippauth', (req,res) => {
-  console.log(req.body);
-  res.send('SONG ZHENG HAS AMAZING USER AGREEMENT');
-});
-
-app.get('/merchant/uaurl', (req,res) => {
-  res.send('SONG ZHENG HAS AMAZING USER AGREEMENT');
-});
-
+// User is returned here after ISU flow
 app.get('/merchant/return', (req,res) => {
-  request.get(`${ppUrl}/customer/partners/${''}/merchant-integrations/${req.query.merchantIdInPayPal}`, {
+  // Get merchant information (like target cid)
+  request.get(`${ppUrl}/customer/partners/${partnerId}/merchant-integrations/${req.query.merchantIdInPayPal}`, {
     headers: {
       Authorization: `Bearer ${ppdata.access_token}`
     },
   }, (err, rez, body) => {
-    res.json(body);
+    const result = (typeof body === 'string') ? JSON.parse(body) : body;
+    res.json(result);
   });
 });
 
-app.get('/*', (req, res) => {
-  res.send('CwEUKppWGgO-dNi3zatsySfibhZaf2r_ZhH_D4tTojU.JW34t1osxuE7-sginY5dD-jFlVfyYe1WfM9dpkegXeU');
-});
-app.post('/merchant/pphook', (req, res) => {
-  res.send('success');
-});
-app.get('/merchant/oauth', (req, res) => {
-  console.log('merchant oauth');
-  log(req.query);
-  res.send('success');
-});
-app.get('/merchant/oauthisu', (req, res) => {
-  console.log('ISU');
-  log(req.query);
-  res.send('success');
-});
 app.listen(3612); // ppm.songz.me
 
