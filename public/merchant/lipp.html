@@ -11,22 +11,14 @@
   <span id='lippButton'></span>
 
 <script src='https://www.paypalobjects.com/js/external/api.js'></script>
-<script>
-paypal.use( ['login'], function (login) {
-  login.render ({
-    "appid":"AeWPOmuBjFfAm4pHzdPsqvM3vGVujZBC2dWLu08ry42YWunCEY3wimXVOFfq3tWG5kjcd0bZSDW5z-on",
-    "authend":"sandbox",
-    "scopes":"openid profile address https://uri.paypal.com/services/paypalattributes",
-    "containerid":"lippButton",
-    "locale":"en-us",
-    "theme":"neutral",
-    "returnurl":"https://ppm.songz.me/merchant/oauth"
-  });
-});
-</script>
 
-  <script src="/merchant/app.js"></script>
   <link rel="stylesheet" href="/merchant/app.css">
+
+  <div id="loginButton">
+    Login With PayPal
+  </div>
+
+  <script src="/lipp/app.js"></script>
 </body>
 </html>
 

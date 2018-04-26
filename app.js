@@ -47,6 +47,7 @@ post('/oauth2/token', {
   },
 }, (body) => {
   ppdata = body;
+  console.log('PPDATA', ppdata);
 });
 
 // Express - server routing
@@ -77,7 +78,7 @@ app.post('/merchant/referrals', (req,res) => {
       customer_data: {
         customer_type: 'MERCHANT',
         person_details: {
-          email_address: 'mc@garagescript.org',
+          email_address: 'biz@garagescript.org',
         },
       partner_specific_identifiers: [
         {
@@ -131,8 +132,64 @@ app.get('/merchant/balances', (req, res) => {
   });
 });
 
+//const lippurl = 'https://api.sandbox.paypal.com/v1/oauth2/token'
+const lippurl = 'https://api.sandbox.paypal.com/v1/identity/openidconnect/tokenservice'
+
+const lippkey = "AeWPOmuBjFfAm4pHzdPsqvM3vGVujZBC2dWLu08ry42YWunCEY3wimXVOFfq3tWG5kjcd0bZSDW5z-on";
+const lippsecret = "EHbSiG_LWn4LyYHC3_Ej6lGWTMQWwSdGZi_HCboNh_1A8951BWgbsdB6ZuYZiDCjVKrni8fOYpC92fPV";
+
+const lipp64 = Buffer.from(`${lippkey}:${lippsecret}`).toString('base64');
+
+app.get('/merchant/oauth', (req,res) => {
+  request.post({
+    url: `${lippurl}`,
+    headers: {
+    'Authorization': `Basic ${lipp64}`
+    },
+    form: {
+      grant_type: 'authorization_code',
+      code: req.query.code
+    }
+  }, (err, response, body) => {
+    if (err) {
+      console.log("ERROR", err);
+      return res.json(err);
+    }
+    const result = typeof body === 'string' ? JSON.parse(body) : body;
+    console.log('RESULT', result);
+    res.json(result);
+  });
+});
+
+app.get('/checkToken/:tok', (req,res) => {
+  request.get(`${ppUrl}/offers/containers`, {
+    headers: {
+      Authorization: `Bearer ${req.params.tok}`
+    },
+  }, (err2, rez2, body2) => {
+    if(err2) return res.json(err2);
+    if(!body2) return res.json(rez2);
+    const result3 = (typeof body2 === 'string') ? JSON.parse(body2) : body2;
+    res.json(result3);
+  });
+});
+
+app.get('/containers', (req,res) => {
+  request.get(`${ppUrl}/offers/containers`, {
+    headers: {
+      Authorization: `Bearer ${'A23AAH1u6f_jqWg_lLFyxaseq6QIAfzbwEqFX68pUs1rPkxPnr8g-fkvXtDGuegBjM9tGEaq7JSWXO-UYExzypESmS3HZWI5A'}`
+    },
+  }, (err2, rez2, body2) => {
+    if(err2) return res.json(err2);
+    if(!body2) return res.json(rez2);
+    const result3 = (typeof body2 === 'string') ? JSON.parse(body2) : body2;
+    res.json(result3);
+  });
+});
+
 // User is returned here after ISU flow
 app.get('/merchant/return', (req,res) => {
+  return res.sendFile('/home/song/Documents/work/public/merchant/start.html');
   // Get merchant information (like target cid)
   const queries = req.query;
   request.get(`${ppUrl}/customer/partners/${partnerId}/merchant-integrations/${req.query.merchantIdInPayPal}`, {
@@ -180,5 +237,5 @@ app.get('/merchant/return', (req,res) => {
   });
 });
 
-app.listen(3612); // ppm.songz.me
+app.listen(3612, () => console.log('SERVING RUNNING ON PORT 3612. Visit http://localhost:3612 or to view a live app, go to ppm.songz.me')); // ppm.songz.me
 
