@@ -1,7 +1,7 @@
 // Get referral link
 const request = (cb) => {
   const xhr = new XMLHttpRequest();
-  xhr.open('POST', 'https://ppm.songz.me/merchant/referrals');
+  xhr.open('POST', '/merchant/referrals');
   xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
   xhr.onloadend = () => {
     // do something to response
